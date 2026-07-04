@@ -1,0 +1,17 @@
+spectral radius of M: 0.383
+
+--- contaminated series: 2 detection(s), 3 sweep(s), c2=20.63 ---
+  IO at series t=140 | lam2_AO=71.7 lam2_IO=80.1 | omega=[-1.55  5.94 -0.46] | t-stats=[-1.6  6.4 -0.5]
+  AO at series t=60 | lam2_AO=35.5 lam2_IO=30.7 | omega=[ 5.19  0.43 -0.32] | t-stats=[ 5.7  0.5 -0.3]
+  truth: AO at t=60 loc 0 (omega_0=5.0), IO at t=140 loc 1 (omega_1=5.0)
+
+  phi0 true [ 0.4  -0.3   0.25] | contaminated-then-cleaned fit [ 0.529 -0.421  0.228] | clean-data fit [ 0.518 -0.428  0.23 ]
+  phi1 true [ 0.3  0.2 -0.2] | contaminated-then-cleaned fit [ 0.184  0.298 -0.196] | clean-data fit [ 0.192  0.306 -0.189]
+
+--- clean series: 0 detection(s) (expect 0) ---
+
+--- repetition study, R=200, magnitude 5.0 sigma ---
+  AO detection rate (±1): 0.965 | correct type given hit: 0.870 | correct location: 1.000
+  IO detection rate (±1): 0.945 | correct type given hit: 0.857 | correct location: 1.000
+  spurious detections per contaminated run: 0.025
+  clean-series empirical FWER (target <= 0.05): 0.015

@@ -1,0 +1,30 @@
+=== exp08: rubella outbreak detection, Japan 8 regions, weekly ===
+period 2012-W38..2022-W52  (T=537 growth-rate obs)
+spectral radius of fitted M: 0.581
+Bonferroni c^2 (alpha=0.05): 33.7
+detections: 20
+
+week      type std-region abs-region |omega|max  context (regional cases, det. week)
+2012-W43  IO   Shikoku    Shikoku          1.11  Kanto=15, Kinki=3, Chubu=1
+2012-W49  IO   Hokkaido   Hokkaido         1.39  Kanto=34, Kinki=10, Chubu=2
+2013-W05  AO   Hokkaido   Kyushu-Ok        1.18  Kanto=44, Kinki=8, Chubu=4
+2013-W07  AO   Kyushu-Ok  Kyushu-Ok        1.81  Kanto=123, Kinki=16, Chubu=4
+2013-W12  AO   Tohoku     Tohoku           1.21  Kanto=192, Kinki=60, Kyushu-Ok=21
+2013-W28  AO   Shikoku    Shikoku          0.96  Kinki=123, Kanto=110, Kyushu-Ok=28
+2013-W30  AO   Tohoku     Tohoku           1.46  Kinki=66, Kanto=65, Kyushu-Ok=11
+2013-W39  IO   Shikoku    Shikoku          1.11  Kinki=10, Kanto=7, Hokkaido=1
+2018-W33  IO   Chugoku    Kinki            1.41  Kanto=33, Chubu=5, Kinki=2
+2018-W35  AO   Shikoku    Chubu            0.90  Kanto=57, Chubu=9, Kinki=6
+2018-W37  AO   Shikoku    Chugoku          1.01  Kanto=107, Chubu=12, Kinki=5
+2018-W40  IO   Kyushu-Ok  Kyushu-Ok        1.55  Kanto=99, Chubu=17, Kinki=13
+2018-W44  IO   Chugoku    Chugoku          1.61  Kanto=93, Kinki=22, Chubu=16
+2018-W45  IO   Tohoku     Tohoku           1.21  Kanto=101, Kinki=18, Kyushu-Ok=15
+2018-W49  AO   Hokkaido   Hokkaido         1.48  Kanto=79, Kyushu-Ok=18, Kinki=11
+2018-W50  AO   Shikoku    Shikoku          1.23  Kanto=57, Kyushu-Ok=25, Chubu=10
+2018-W51  AO   Hokkaido   Hokkaido         1.10  Kanto=47, Kyushu-Ok=12, Chubu=8
+2019-W02  IO   Chugoku    Chubu            2.02  Kanto=62, Kinki=10, Kyushu-Ok=10
+2019-W22  IO   Kyushu-Ok  Kyushu-Ok        1.34  Kanto=19, Kinki=4, Chugoku=2
+2019-W39  IO   Hokkaido   Tohoku           0.99  Kanto=8, Tohoku=3, Kinki=2
+
+detections in outbreak years ('2012', '2013', '2018', '2019'): 20/20
+localized to a high-incidence region (Kanto/Kinki/Chubu/Kyushu): absolute-effect 7/20, standardized 3/20
