@@ -8,6 +8,7 @@ authors:
     affiliation: "Ehime University"
     email: arif@lms.id
 version: 1.0.0
+doi: 10.5281/zenodo.21185669
 license: MIT
 repository-code: "https://github.com/noeroelama/outlier-detection-gstar"
 keywords:

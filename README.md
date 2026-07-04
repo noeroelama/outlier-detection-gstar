@@ -1,5 +1,8 @@
 # Covariance-aware outlier detection in GSTAR models
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21185669.svg)](https://doi.org/10.5281/zenodo.21185669)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 Reference implementation and replication code for the paper
 
 > Nurwahid, A. *Covariance-aware outlier detection in GSTAR models, with an
