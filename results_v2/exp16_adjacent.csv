@@ -1,0 +1,9 @@
+scenario,detector,recall,precision,type_acc
+"AO,AO same location, gap 3 (original design)",combo,0.909,0.9848320693391116,0.8118811881188119
+"AO,AO same location, gap 2",combo,0.926,0.9830148619957537,0.82829373650108
+"AO,AO same location, consecutive",combo,0.753,0.9791937581274383,0.38247011952191234
+"AO patch, 3 consecutive, same location",combo,0.6033333333333334,0.9836956521739131,0.2839779005524862
+"AO,AO neighbouring locations, consecutive",combo,0.945,0.9895287958115183,0.5883597883597883
+"AO then IO, same location, consecutive",combo,0.716,0.9794801641586868,0.2639664804469274
+"IO then AO, same location, consecutive",combo,0.905,0.984766050054407,0.9104972375690608
+"6 sd AO and 4 sd IO, 20 apart",combo,0.94,0.9884332281808622,0.7723404255319148

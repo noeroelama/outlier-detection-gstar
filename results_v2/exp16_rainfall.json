@@ -1,0 +1,143 @@
+{
+ "full": [
+  "1987-01 AO",
+  "1988-02 AO",
+  "1988-04 AO",
+  "1989-04 AO",
+  "1990-02 AO",
+  "1991-03 AO",
+  "1997-02 AO",
+  "2000-08 AO",
+  "2007-12 AO",
+  "2008-02 AO",
+  "2009-04 AO",
+  "2010-02 IO",
+  "2010-04 AO",
+  "2012-04 AO",
+  "2014-01 AO",
+  "2019-12 IO",
+  "2021-02 AO"
+ ],
+ "combo": [
+  "1987-01 AO",
+  "1988-02 AO",
+  "1988-04 IO",
+  "1989-04 AO",
+  "1990-02 AO",
+  "1991-03 IO",
+  "1997-02 AO",
+  "2000-08 AO",
+  "2007-12 AO",
+  "2008-02 AO",
+  "2009-04 AO",
+  "2010-04 AO",
+  "2012-04 AO",
+  "2021-02 AO"
+ ],
+ "combo_converged": true,
+ "combo_hit_cap": false,
+ "bootstrap_fwer_combo": 0.03,
+ "semi_synthetic_combo": [
+  {
+   "pattern": "single",
+   "kind": "AO",
+   "delta": 3,
+   "power_combo": 0.36,
+   "false_combo": 0.0033333333333333335
+  },
+  {
+   "pattern": "single",
+   "kind": "AO",
+   "delta": 4,
+   "power_combo": 0.7433333333333333,
+   "false_combo": 0.0
+  },
+  {
+   "pattern": "single",
+   "kind": "AO",
+   "delta": 5,
+   "power_combo": 0.94,
+   "false_combo": 0.0033333333333333335
+  },
+  {
+   "pattern": "single",
+   "kind": "IO",
+   "delta": 3,
+   "power_combo": 0.3433333333333333,
+   "false_combo": 0.0033333333333333335
+  },
+  {
+   "pattern": "single",
+   "kind": "IO",
+   "delta": 4,
+   "power_combo": 0.7433333333333333,
+   "false_combo": 0.0
+  },
+  {
+   "pattern": "single",
+   "kind": "IO",
+   "delta": 5,
+   "power_combo": 0.9233333333333333,
+   "false_combo": 0.0033333333333333335
+  },
+  {
+   "pattern": "cluster",
+   "kind": "AO",
+   "delta": 3,
+   "power_combo": 0.47,
+   "false_combo": 0.0
+  },
+  {
+   "pattern": "cluster",
+   "kind": "AO",
+   "delta": 4,
+   "power_combo": 0.8833333333333333,
+   "false_combo": 0.0
+  },
+  {
+   "pattern": "cluster",
+   "kind": "AO",
+   "delta": 5,
+   "power_combo": 0.9966666666666667,
+   "false_combo": 0.0033333333333333335
+  },
+  {
+   "pattern": "cluster",
+   "kind": "IO",
+   "delta": 3,
+   "power_combo": 0.44666666666666666,
+   "false_combo": 0.006666666666666667
+  },
+  {
+   "pattern": "cluster",
+   "kind": "IO",
+   "delta": 4,
+   "power_combo": 0.87,
+   "false_combo": 0.0
+  },
+  {
+   "pattern": "cluster",
+   "kind": "IO",
+   "delta": 5,
+   "power_combo": 0.99,
+   "false_combo": 0.0
+  }
+ ],
+ "null_thresholds": [
+  {
+   "corr": "low",
+   "c_size_adjusted": 0.9319571571851234,
+   "fwer_nominal": 0.022
+  },
+  {
+   "corr": "moderate",
+   "c_size_adjusted": 0.945035052750236,
+   "fwer_nominal": 0.029
+  },
+  {
+   "corr": "high",
+   "c_size_adjusted": 0.9508465253124551,
+   "fwer_nominal": 0.023
+  }
+ ]
+}

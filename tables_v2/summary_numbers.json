@@ -1,0 +1,47 @@
+{
+ "t5_min": 0.725,
+ "t5_max": 1.0,
+ "p2_min": 0.014,
+ "p2_max": 0.046,
+ "var_min": 0.002,
+ "var_max": 0.031,
+ "full_gauss_min": 0.001,
+ "full_gauss_max": 0.033,
+ "perloc_gauss_max": 0.032,
+ "diag_gauss_min": 0.045,
+ "diag_gauss_max": 1.0,
+ "fixed3_min": 0.651,
+ "app_bootstrap": {
+  "full": {
+   "fwer_nominal": 0.02,
+   "c2_size_adjusted": 77.96484284002656,
+   "c2_nominal": 81.50763798061118
+  },
+  "perloc": {
+   "fwer_nominal": 0.03,
+   "c2_size_adjusted": 22.313945395403064,
+   "c2_nominal": 23.317459761790342
+  }
+ },
+ "app_n": {
+  "full/gstar": 17,
+  "perloc/gstar": 0,
+  "perloc/ar": 0,
+  "full/var": 9,
+  "diag/gstar": 60
+ },
+ "W_sens": {
+  "inverse distance": [
+   17,
+   17
+  ],
+  "3 nearest neighbours": [
+   20,
+   16
+  ],
+  "uniform": [
+   17,
+   16
+  ]
+ }
+}

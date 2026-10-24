@@ -1,0 +1,17 @@
+scenario,detector,fit,recall,precision,type_acc
+"AO,AO same location, gap 3 (original design)",full,gstar,0.896,0.9792349726775956,0.8203125
+"AO,AO same location, gap 3 (original design)",perloc,gstar,0.788,0.9813200498132005,0.8515228426395939
+"AO,AO same location, gap 2",full,gstar,0.9,0.9836065573770492,0.83
+"AO,AO same location, gap 2",perloc,gstar,0.806,0.9734299516908212,0.858560794044665
+"AO,AO same location, consecutive",full,gstar,0.762,0.9806949806949807,0.3884514435695538
+"AO,AO same location, consecutive",perloc,gstar,0.458,0.9621848739495799,0.3384279475982533
+"AO patch, 3 consecutive, same location",full,gstar,0.5966666666666667,0.98568281938326,0.288268156424581
+"AO patch, 3 consecutive, same location",perloc,gstar,0.3233333333333333,0.9661354581673307,0.24536082474226803
+"AO,AO neighbouring locations, consecutive",full,gstar,0.939,0.9832460732984293,0.5889243876464324
+"AO,AO neighbouring locations, consecutive",perloc,gstar,0.675,0.9854014598540146,0.7318518518518519
+"AO then IO, same location, consecutive",full,gstar,0.716,0.9835164835164835,0.2751396648044693
+"AO then IO, same location, consecutive",perloc,gstar,0.419,0.9632183908045977,0.11694510739856802
+"IO then AO, same location, consecutive",full,gstar,0.889,0.9844961240310077,0.9088863892013498
+"IO then AO, same location, consecutive",perloc,gstar,0.75,0.9752925877763329,0.852
+"6 sd AO and 4 sd IO, 20 apart",full,gstar,0.961,0.9856410256410256,0.7721123829344433
+"6 sd AO and 4 sd IO, 20 apart",perloc,gstar,0.678,0.9797687861271677,0.8067846607669616

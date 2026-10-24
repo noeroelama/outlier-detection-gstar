@@ -2,3 +2,4 @@ numpy>=1.26
 scipy>=1.11
 pandas>=2.0
 matplotlib>=3.8
+geopandas>=1.0  # figures_v2 maps only

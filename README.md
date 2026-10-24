@@ -66,7 +66,50 @@ take a few minutes; random seeds are fixed, so reruns reproduce the shipped
 numbers in `results/`. The experiment numbering skips `exp05`: that was an
 exploratory analysis on COVID-19 data that is not part of the paper.
 
-## Data
+
+## Revision for *Array* (version 2, October 2026)
+
+The revised paper ("Outlier detection in generalized space-time autoregressive
+models using the full error covariance, with an application to monthly rainfall
+in Indonesia") uses the new module `src/gstar_outlier/general.py`:
+
+- GSTAR(p;1), VAR(p) and independent AR(p) fitting;
+- the full-covariance AO/IO statistics for any order p (for p = 1 they equal
+  `detection.py`), the diagonal-covariance statistic and the calibrated
+  per-location maximum statistic;
+- the combined test (`detector="combo"`): full-covariance OR per-location
+  maximum statistic, each at level alpha/2 (recommended for routine use);
+- the iterative procedure `general.iterative`, which also returns
+  `converged` and `hit_cap`. `hit_cap = True` means a sweep stopped at
+  `max_outliers`; the count of outliers is then set by the cap, not by the data,
+  and the Gaussian reference is probably inadequate (this happened with the
+  weekly rubella counts used in version 1, which is why that application was
+  dropped).
+
+Scripts (run from `experiments_v2/`, fixed seeds, results in `results_v2/`):
+
+```
+python exp10_fwer.py            # family-wise error rate (Table 1)            ~3 min on 2 cores
+python exp11_power_baselines.py # power vs baselines (Fig. 4, B.1)       ~15 min
+python exp15_gstar_vs_var.py    # GSTAR fit vs unrestricted VAR fit (Table 2)
+python exp16_combined.py        # combined test, paired with exp10-12 and exp20 (Table 3, Table 6)
+python exp12_adjacent.py        # adjacent outliers (Table 4)
+python exp13_classification.py  # AO/IO misclassification (Fig. 5)
+python exp14_weights.py         # weight-matrix sensitivity (Table 5)
+python exp20_rainfall.py        # rainfall application (Tables 6-7)       ~15 min
+python make_tables_v2.py        # LaTeX table rows -> tables_v2/
+python make_diagrams_v2.py      # explanatory diagrams (Figs. 1-2)
+python make_figures_v2.py       # figures -> figures_v2/ (needs geopandas and
+                                #   data/external/provinces_simplified.geojson)
+```
+
+Rainfall data: `data/panel_rainfall_long.csv` (CHIRPS v2.0 province means,
+38 provinces, 1985-01 to 2025-04; the paper uses 1985-2024) and
+`data/a_geo_centroids.csv` (province centroids). The province polygons
+(batas-administrasi-indonesia, 13 June 2023) are not redistributed; place them
+in `data/external/` to redraw the maps.
+
+## Data (version 1)
 
 The weekly rubella panel in `data/` is assembled from Japan's national
 notifiable-disease surveillance (NESID/JIHS); see `data/README.md` for

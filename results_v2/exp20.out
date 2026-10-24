@@ -1,0 +1,20 @@
+identification: BIC {1: -45.55520169995118, 2: -44.82146360762345, 3: -43.874186960072414, 4: -42.76689810127849}; spectral radius 0.529
+full/gstar: 17 detections, 5 sweeps, converged=True, hit_cap=False, c2 = 81.5
+perloc/gstar: 0 detections, 2 sweeps, converged=True, hit_cap=False, c2 = 23.3
+perloc/ar: 0 detections, 2 sweeps, converged=True, hit_cap=False, c2 = 23.3
+full/var: 9 detections, 7 sweeps, converged=True, hit_cap=False, c2 = 81.5
+diag/gstar: 60 detections, 8 sweeps, converged=True, hit_cap=True, c2 = 81.5
+W sensitivity: {k: (v['n'], v['overlap_with_invdist']) for k, v in wsens.items()}
+bootstrap: {'full': {'fwer_nominal': 0.02, 'c2_size_adjusted': 77.96484284002656, 'c2_nominal': 81.50763798061118}, 'perloc': {'fwer_nominal': 0.03, 'c2_size_adjusted': 22.313945395403064, 'c2_nominal': 23.317459761790342}}
+{'pattern': 'single', 'kind': 'AO', 'delta': 3, 'power_full': 0.4166666666666667, 'power_perloc': 0.056666666666666664, 'false_full': 0.18, 'false_perloc': 0.0}
+{'pattern': 'single', 'kind': 'AO', 'delta': 4, 'power_full': 0.75, 'power_perloc': 0.25666666666666665, 'false_full': 0.2, 'false_perloc': 0.0}
+{'pattern': 'single', 'kind': 'AO', 'delta': 5, 'power_full': 0.9333333333333333, 'power_perloc': 0.59, 'false_full': 0.25333333333333335, 'false_perloc': 0.0}
+{'pattern': 'single', 'kind': 'IO', 'delta': 3, 'power_full': 0.37666666666666665, 'power_perloc': 0.05, 'false_full': 0.13, 'false_perloc': 0.0}
+{'pattern': 'single', 'kind': 'IO', 'delta': 4, 'power_full': 0.75, 'power_perloc': 0.18333333333333332, 'false_full': 0.24666666666666667, 'false_perloc': 0.0}
+{'pattern': 'single', 'kind': 'IO', 'delta': 5, 'power_full': 0.9066666666666666, 'power_perloc': 0.6, 'false_full': 0.2866666666666667, 'false_perloc': 0.0}
+{'pattern': 'cluster', 'kind': 'AO', 'delta': 3, 'power_full': 0.48, 'power_perloc': 0.13333333333333333, 'false_full': 0.21333333333333335, 'false_perloc': 0.0}
+{'pattern': 'cluster', 'kind': 'AO', 'delta': 4, 'power_full': 0.8933333333333333, 'power_perloc': 0.38, 'false_full': 0.30666666666666664, 'false_perloc': 0.0}
+{'pattern': 'cluster', 'kind': 'AO', 'delta': 5, 'power_full': 0.9933333333333333, 'power_perloc': 0.8533333333333334, 'false_full': 0.30333333333333334, 'false_perloc': 0.0}
+{'pattern': 'cluster', 'kind': 'IO', 'delta': 3, 'power_full': 0.47, 'power_perloc': 0.1, 'false_full': 0.23333333333333334, 'false_perloc': 0.0}
+{'pattern': 'cluster', 'kind': 'IO', 'delta': 4, 'power_full': 0.8733333333333333, 'power_perloc': 0.33666666666666667, 'false_full': 0.27666666666666667, 'false_perloc': 0.0}
+{'pattern': 'cluster', 'kind': 'IO', 'delta': 5, 'power_full': 0.98, 'power_perloc': 0.71, 'false_full': 0.35333333333333333, 'false_perloc': 0.0}
