@@ -110,8 +110,8 @@ def basemap(ax):
 
 # figure 1
 res = js
-fit = G.fit_gstar_p(A, W, 1)
-resid_full = G._resid_from(A, fit.Ms)
+fit = G.fit_model(A, W, 1)
+resid_full = G.compute_residuals(A, fit.Ms)
 fig = plt.figure(figsize=(7.2, 2.9))
 ax = fig.add_axes([0.0, 0.05, 0.66, 0.9])
 basemap(ax)
@@ -136,15 +136,15 @@ ax2.set_title("(b) GSTAR(1;1) residuals", loc="left")
 save(fig, "fig1_study_area")
 
 # figure 4: timeline of the joint and the per-location statistic (final parameters)
-final = G.iterative(A, W, 1, max_outliers=60, max_sweeps=15)
-e = G._resid_from(A, final.fit.Ms)
-a, i, *_ = G.scan(e, final.fit.Ms, final.fit.Sigma, "full")
-final_pl = G.iterative(A, W, 1, "perloc", max_outliers=60, max_sweeps=15)   # its own fit
-e_pl = G._resid_from(A, final_pl.fit.Ms)
-pa, pi, *_ = G.scan(e_pl, final_pl.fit.Ms, final_pl.fit.Sigma, "perloc")
+final = G.iterative_detection(A, W, 1, max_outliers=60, max_sweeps=15)
+e = G.compute_residuals(A, final.fit.Ms)
+a, i, *_ = G.scan_statistics(e, final.fit.Ms, final.fit.Sigma, "full")
+final_pl = G.iterative_detection(A, W, 1, "perloc", max_outliers=60, max_sweeps=15)   # its own fit
+e_pl = G.compute_residuals(A, final_pl.fit.Ms)
+pa, pi, *_ = G.scan_statistics(e_pl, final_pl.fit.Ms, final_pl.fit.Sigma, "perloc")
 t = pd.to_datetime(pd.Series(months[1:]) + "-15")
-c_full = G.threshold("full", N, len(e))
-c_pl = G.threshold("perloc", N, len(e))
+c_full = G.bonferroni_threshold("full", N, len(e))
+c_pl = G.bonferroni_threshold("perloc", N, len(e))
 fig, axes = plt.subplots(2, 1, figsize=(7.0, 3.9), sharex=True)
 axes[0].plot(t, np.maximum(a, i), color="#0072B2", lw=0.6)
 axes[0].axhline(c_full, color="#111111", ls="--", lw=0.8)

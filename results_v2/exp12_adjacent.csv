@@ -1,6 +1,6 @@
 scenario,detector,fit,recall,precision,type_acc
-"AO,AO same location, gap 3 (original design)",full,gstar,0.896,0.9792349726775956,0.8203125
-"AO,AO same location, gap 3 (original design)",perloc,gstar,0.788,0.9813200498132005,0.8515228426395939
+"AO,AO same location, gap 3",full,gstar,0.896,0.9792349726775956,0.8203125
+"AO,AO same location, gap 3",perloc,gstar,0.788,0.9813200498132005,0.8515228426395939
 "AO,AO same location, gap 2",full,gstar,0.9,0.9836065573770492,0.83
 "AO,AO same location, gap 2",perloc,gstar,0.806,0.9734299516908212,0.858560794044665
 "AO,AO same location, consecutive",full,gstar,0.762,0.9806949806949807,0.3884514435695538

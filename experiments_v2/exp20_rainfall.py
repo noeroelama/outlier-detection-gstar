@@ -43,7 +43,7 @@ p_ = log.append
 # 1. identification -------------------------------------------------------
 bic = {}
 for p in range(1, 5):
-    f = G.fit_gstar_p(A[4 - p:], W, p)        # common effective sample
+    f = G.fit_model(A[4 - p:], W, p)        # common effective sample
     n = len(f.resid)
     S = f.resid.T @ f.resid / n
     bic[p] = float(np.linalg.slogdet(S)[1] + 2 * p * N * np.log(n) / n)
@@ -51,8 +51,8 @@ out["bic"] = bic
 sp = stpacf(A, W, 4)
 out["stpacf"] = {k: [float(a), float(b)] for k, (a, b) in sp.items()}
 out["stpacf_bound"] = float(stpacf_se(T, N))
-fit1 = G.fit_gstar_p(A, W, 1)
-out["spectral_radius"] = G.companion_radius(fit1.Ms)
+fit1 = G.fit_model(A, W, 1)
+out["spectral_radius"] = G.companion_spectral_radius(fit1.Ms)
 z = fit1.resid / np.sqrt(np.diag(fit1.Sigma))
 out["resid_kurtosis_median_max"] = [float(np.median(stats.kurtosis(z, axis=0))), float(stats.kurtosis(z, axis=0).max())]
 out["resid_skew_median"] = float(np.median(stats.skew(z, axis=0)))
@@ -64,7 +64,7 @@ p_(f"identification: BIC {bic}; spectral radius {out['spectral_radius']:.3f}")
 # 2. detection ---------------------------------------------------------------
 dets = {}
 for det, fk in [("full", "gstar"), ("perloc", "gstar"), ("perloc", "ar"), ("full", "var"), ("diag", "gstar")]:
-    r = G.iterative(A, W, 1, det, fk, max_outliers=60, max_sweeps=15)
+    r = G.iterative_detection(A, W, 1, det, fk, max_outliers=60, max_sweeps=15)
     dets[f"{det}/{fk}"] = r
     p_(f"{det}/{fk}: {len(r.detections)} detections, {r.n_sweeps} sweeps, converged={r.converged}, hit_cap={r.hit_cap}, c2 = {r.c2:.1f}")
 main = dets["full/gstar"]
@@ -84,14 +84,14 @@ out["converged_hit_cap"] = {k: [v.converged, v.hit_cap, v.n_sweeps] for k, v in 
 out["months_var"] = sorted(Y.index[d.t] for d in dets["full/var"].detections)
 
 # whitening check for each detection: largest single |z| of the raw residual
-e1 = G._resid_from(A, main.fit.Ms)
+e1 = G.compute_residuals(A, main.fit.Ms)
 out["max_abs_resid_z_at_detections"] = [float(np.max(np.abs(e1[d.t - 1] / np.sqrt(np.diag(main.fit.Sigma))))) for d in main.detections]
-out["perloc_threshold_abs_z"] = float(np.sqrt(G.threshold("perloc", N, T - 1)))
+out["perloc_threshold_abs_z"] = float(np.sqrt(G.bonferroni_threshold("perloc", N, T - 1)))
 
 # 3. W sensitivity -------------------------------------------------------------
 C = cen[["lat", "lon"]].values
 from _common import W_invdist
-def knn(C, k):
+def W_knn_great_circle(C, k):
     lat, lon = np.radians(C[:, 0]), np.radians(C[:, 1])
     d = np.arccos(np.clip(np.sin(lat[:, None]) * np.sin(lat) + np.cos(lat[:, None]) * np.cos(lat) * np.cos(lon[:, None] - lon), -1, 1))
     Wk = np.zeros((N, N))
@@ -100,8 +100,8 @@ def knn(C, k):
     return Wk / Wk.sum(1, keepdims=True)
 wsens = {}
 base = {Y.index[d.t] for d in main.detections}
-for name, Wx in [("inverse distance", W), ("3 nearest neighbours", knn(C, 3)), ("uniform", D.W_uniform(N))]:
-    r = G.iterative(A, Wx, 1, "full", "gstar", max_outliers=60, max_sweeps=15)
+for name, Wx in [("inverse distance", W), ("3 nearest neighbours", W_knn_great_circle(C, 3)), ("uniform", D.W_uniform(N))]:
+    r = G.iterative_detection(A, Wx, 1, "full", "gstar", max_outliers=60, max_sweeps=15)
     ms = {Y.index[d.t] for d in r.detections}
     wsens[name] = dict(n=len(ms), overlap_with_invdist=len(ms & base), months=sorted(ms))
 out["W_sensitivity"] = wsens
@@ -113,16 +113,16 @@ rng = np.random.default_rng(zlib.crc32(b"rain-boot"))
 RB = 500
 mx = {"full": [], "perloc": []}
 for _ in range(RB):
-    Zb = G.simulate_gstar_p(fitc.Ms, fitc.Sigma, T, rng=rng)
+    Zb = G.simulate_model(fitc.Ms, fitc.Sigma, T, rng=rng)
     for det in mx:
-        mx[det].append(G.initial_max(Zb, W, 1, det, "gstar")[0])
-out["bootstrap"] = {det: dict(fwer_nominal=float(np.mean(np.array(v) > G.threshold(det, N, T - 1))),
-                              c2_size_adjusted=float(np.quantile(v, 0.95)), c2_nominal=G.threshold(det, N, T - 1))
+        mx[det].append(G.first_scan_maximum(Zb, W, 1, det, "gstar")[0])
+out["bootstrap"] = {det: dict(fwer_nominal=float(np.mean(np.array(v) > G.bonferroni_threshold(det, N, T - 1))),
+                              c2_size_adjusted=float(np.quantile(v, 0.95)), c2_nominal=G.bonferroni_threshold(det, N, T - 1))
                     for det, v in mx.items()}
 p_(f"bootstrap: {out['bootstrap']}")
 
 # 5. semi-synthetic validation -------------------------------------------------
-Aclean = G._clean(A, main.detections, fitc.Ms)
+Aclean = G._remove_outlier_effects(A, main.detections, fitc.Ms)
 sd = np.sqrt(np.diag(fitc.Sigma))
 RS = 300
 semi = []
@@ -143,9 +143,9 @@ for pattern in ("single", "cluster"):
                     ix = list(np.argsort(dd)[:3])
                 om = np.zeros(N)
                 om[ix] = delta * sd[ix]
-                Psi = G.inject(Aclean, fitc.Ms, t0, om, kind)
+                Psi = G.add_outlier(Aclean, fitc.Ms, t0, om, kind)
                 for det in hit:
-                    r = G.iterative(Psi, W, 1, det, "gstar", max_outliers=60, max_sweeps=15)
+                    r = G.iterative_detection(Psi, W, 1, det, "gstar", max_outliers=60, max_sweeps=15)
                     near = [d for d in r.detections if abs(d.t - t0) <= 1]
                     hit[det] += bool(near)
                     false[det] += len(r.detections) - len(near)

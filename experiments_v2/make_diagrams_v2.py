@@ -36,7 +36,7 @@ omega = np.array([0., 3., 0.])                                  # outlier at loc
 t = np.arange(T)
 fig, axes = plt.subplots(2, 2, figsize=(6.6, 3.6), sharex=True, sharey="row")
 for c, kind in enumerate(["AO", "IO"]):
-    eff = G.inject(np.zeros((T, 3)), Ms, tau, omega, kind)      # effect on observations
+    eff = G.add_outlier(np.zeros((T, 3)), Ms, tau, omega, kind)      # effect on observations
     res = np.zeros((T, 3))
     res[1:] = eff[1:] - eff[:-1] @ M.T                          # effect on residuals e_t = Psi_t - M Psi_{t-1}
     for r, (Y, lab) in enumerate([(eff, "effect on the observations"), (res, "effect on the residuals")]):

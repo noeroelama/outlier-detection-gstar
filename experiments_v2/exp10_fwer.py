@@ -27,23 +27,23 @@ R = 1000
 DETS = [("full", "gstar"), ("diag", "gstar"), ("perloc", "gstar"), ("full", "var"), ("perloc", "ar")]
 
 
-def one_config(cfg):
+def run_configuration(cfg):
     N, T, level, errs, p = cfg
-    C, W, Sigma, Ms = D.design(N, level)
+    C, W, Sigma, Ms = D.make_design(N, level)
     if p == 2:  # split the dynamics over two lags, same total persistence
         Ms = np.stack([0.6 * Ms[0], 0.3 * Ms[0]])
     rng = np.random.default_rng(zlib.crc32(repr(cfg).encode()))
     df = 5 if errs == "t5" else None
     maxima = {d: [] for d in DETS}
     for _ in range(R):
-        Z = G.simulate_gstar_p(Ms, Sigma, T, rng=rng, df=df)
+        Z = G.simulate_model(Ms, Sigma, T, rng=rng, df=df)
         for det, fk in DETS:
-            m, Teff = G.initial_max(Z, W, p, det, fk)
+            m, Teff = G.first_scan_maximum(Z, W, p, det, fk)
             maxima[(det, fk)].append(m)
     rows = []
     for (det, fk), ms in maxima.items():
         ms = np.array(ms)
-        c_nom = G.threshold(det, N, T - p)
+        c_nom = G.bonferroni_threshold(det, N, T - p)
         row = dict(N=N, T=T, corr=level, errors=errs, p=p, detector=det, fit=fk,
                    c2_nominal=round(c_nom, 3), fwer=float(np.mean(ms > c_nom)),
                    c2_size_adjusted=float(np.quantile(ms, 0.95)))
@@ -60,7 +60,7 @@ if __name__ == "__main__":
     t0 = time.time()
     out = []
     with Pool(2) as pool:
-        for rows in pool.imap_unordered(one_config, grid):
+        for rows in pool.imap_unordered(run_configuration, grid):
             out += rows
             print(f"{len(out)//6:3d}/{len(grid)} configs, {time.time()-t0:6.0f}s", flush=True)
     out.sort(key=lambda r: (r["p"], r["N"], r["T"], r["corr"], r["errors"], r["detector"], r["fit"]))

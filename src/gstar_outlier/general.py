@@ -59,7 +59,7 @@ from scipy import stats
 # fitting
 # --------------------------------------------------------------------------
 @dataclass
-class FitP:
+class ModelFit:
     Ms: np.ndarray            # (p, N, N) coefficient matrices M_1..M_p
     Sigma: np.ndarray         # (N, N) residual covariance
     resid: np.ndarray         # (T-p, N); resid[k] = e_{k+p}
@@ -68,16 +68,16 @@ class FitP:
     kind: str
 
 
-def _lags(Z: np.ndarray, p: int) -> list[np.ndarray]:
+def _lagged_values(Z: np.ndarray, p: int) -> list[np.ndarray]:
     T = len(Z)
     return [Z[p - k:T - k] for k in range(1, p + 1)]   # lag k aligned with Z[p:]
 
 
-def fit_gstar_p(Z: np.ndarray, W: np.ndarray, p: int = 1, kind: str = "gstar") -> FitP:
+def fit_model(Z: np.ndarray, W: np.ndarray, p: int = 1, kind: str = "gstar") -> ModelFit:
     """Least squares for GSTAR(p;1) ('gstar'), N independent AR(p) ('ar') or VAR(p) ('var')."""
     T, N = Z.shape
     Y = Z[p:]
-    L = _lags(Z, p)
+    L = _lagged_values(Z, p)
     Ms = np.zeros((p, N, N))
     resid = np.empty_like(Y)
     coef = np.zeros((N, 2 * p))
@@ -108,10 +108,10 @@ def fit_gstar_p(Z: np.ndarray, W: np.ndarray, p: int = 1, kind: str = "gstar") -
                     Ms[k, i, :] += c * W[i, :]
                     coef[i, 2 * k + 1] = c
     Sigma = np.cov(resid, rowvar=False, ddof=1)
-    return FitP(Ms, Sigma, resid, p, coef, kind)
+    return ModelFit(Ms, Sigma, resid, p, coef, kind)
 
 
-def companion_radius(Ms: np.ndarray) -> float:
+def companion_spectral_radius(Ms: np.ndarray) -> float:
     """Spectral radius of the companion matrix (stationarity iff < 1)."""
     p, N, _ = Ms.shape
     C = np.zeros((N * p, N * p))
@@ -132,11 +132,11 @@ def psi_weights(Ms: np.ndarray, H: int) -> np.ndarray:
     return Psi
 
 
-def simulate_gstar_p(Ms, Sigma, T, burn=200, rng=None, df=None):
+def simulate_model(Ms, Sigma, T, burn=200, rng=None, df=None):
     """Simulate a GSTAR(p)/VAR(p) path. df: Student-t innovations (unit covariance scaled)."""
     rng = rng if rng is not None else np.random.default_rng()
     p, N, _ = Ms.shape
-    if companion_radius(Ms) >= 1:
+    if companion_spectral_radius(Ms) >= 1:
         raise ValueError("non-stationary")
     Lc = np.linalg.cholesky(Sigma)
     hist = np.zeros((p, N))
@@ -154,7 +154,7 @@ def simulate_gstar_p(Ms, Sigma, T, burn=200, rng=None, df=None):
     return out
 
 
-def inject(Z, Ms, t0, omega, kind):
+def add_outlier(Z, Ms, t0, omega, kind):
     """Plant one AO (single observation) or IO (propagated through Psi weights)."""
     Psi = Z.copy()
     if kind == "AO":
@@ -168,15 +168,15 @@ def inject(Z, Ms, t0, omega, kind):
 # --------------------------------------------------------------------------
 # statistics
 # --------------------------------------------------------------------------
-def _pis(Ms):
+def _residual_filter_matrices(Ms):
     p, N, _ = Ms.shape
     return np.concatenate([np.eye(N)[None], -Ms], axis=0)      # (p+1, N, N)
 
 
-def _gls_pieces(resid, Ms, Sinv):
+def _gls_components(resid, Ms, Sinv):
     """g_t = sum_j Pi_j' Sinv e_{t+j} and A_t (window truncated at the end)."""
     Tr, N = resid.shape
-    Pis = _pis(Ms)
+    Pis = _residual_filter_matrices(Ms)
     P1 = len(Pis)
     F = resid @ Sinv                                           # rows: (Sinv e_t)'
     g = np.zeros((Tr, N))
@@ -190,11 +190,11 @@ def _gls_pieces(resid, Ms, Sinv):
     return g, Afull, A_list, Pis
 
 
-def stats_quadratic(resid, Ms, S):
+def full_covariance_statistics(resid, Ms, S):
     """lam2_AO, lam2_IO, omega_AO for the quadratic detector with covariance S
     (S = Sigma for 'full', S = diag(Sigma) for 'diag')."""
     Sinv = np.linalg.inv(S)
-    g, Afull, A_list, _ = _gls_pieces(resid, Ms, Sinv)
+    g, Afull, A_list, _ = _gls_components(resid, Ms, Sinv)
     Ainv = np.linalg.inv(Afull)
     omega = g @ Ainv                                           # Ainv symmetric
     lam_ao = np.einsum("ti,ti->t", omega, g)
@@ -206,11 +206,11 @@ def stats_quadratic(resid, Ms, S):
     return lam_ao, lam_io, omega
 
 
-def stats_perloc(resid, Ms, Sigma):
+def per_location_statistics(resid, Ms, Sigma):
     """Per-location z statistics (working independence estimate, exact sandwich sd)."""
     D = np.diag(np.diag(Sigma))
     Dinv = np.linalg.inv(D)
-    g, Afull, A_list, Pis = _gls_pieces(resid, Ms, Dinv)
+    g, Afull, A_list, Pis = _gls_components(resid, Ms, Dinv)
 
     def sandwich(At, J):
         Ainv = np.linalg.inv(At)
@@ -231,7 +231,7 @@ def stats_perloc(resid, Ms, Sigma):
 # --------------------------------------------------------------------------
 # thresholds
 # --------------------------------------------------------------------------
-def threshold(detector: str, N: int, T_eff: int, alpha: float = 0.05) -> float:
+def bonferroni_threshold(detector: str, N: int, T_eff: int, alpha: float = 0.05) -> float:
     """Squared critical value on the scale of the detector's statistic."""
     if detector in ("full", "diag"):
         return float(stats.chi2.ppf(1 - alpha / (2 * T_eff), N))
@@ -244,38 +244,38 @@ def threshold(detector: str, N: int, T_eff: int, alpha: float = 0.05) -> float:
     raise ValueError(detector)
 
 
-def scan(resid, Ms, Sigma, detector, alpha=0.05):
+def scan_statistics(resid, Ms, Sigma, detector, alpha=0.05):
     """Per-time maximal statistic for each type: returns (s_ao, s_io, omega_ao, loc_ao, loc_io)."""
     if detector == "full":
-        a, i, w = stats_quadratic(resid, Ms, Sigma)
+        a, i, w = full_covariance_statistics(resid, Ms, Sigma)
         return a, i, w, None, None
     if detector == "combo":
         # union of the full-covariance test and the per-location maximum test, each at
         # level alpha/2 (Bonferroni over the two families): flag iff either exceeds its
         # own threshold, i.e. iff max(lam2 / c_full, z2max / c_perloc) > 1
         Tr, N = resid.shape
-        c_f = threshold("full", N, Tr, alpha / 2)
-        c_p = threshold("perloc", N, Tr, alpha / 2)
-        a, i, w = stats_quadratic(resid, Ms, Sigma)
-        za, zi, _ = stats_perloc(resid, Ms, Sigma)
+        c_f = bonferroni_threshold("full", N, Tr, alpha / 2)
+        c_p = bonferroni_threshold("perloc", N, Tr, alpha / 2)
+        a, i, w = full_covariance_statistics(resid, Ms, Sigma)
+        za, zi, _ = per_location_statistics(resid, Ms, Sigma)
         sa = np.maximum(a / c_f, np.max(za ** 2, 1) / c_p)
         si = np.maximum(i / c_f, np.max(zi ** 2, 1) / c_p)
         return sa, si, w, None, None
     if detector == "diag":
-        a, i, w = stats_quadratic(resid, Ms, np.diag(np.diag(Sigma)))
+        a, i, w = full_covariance_statistics(resid, Ms, np.diag(np.diag(Sigma)))
         return a, i, w, None, None
     if detector in ("perloc", "fixed3"):
-        za, zi, w = stats_perloc(resid, Ms, Sigma)
+        za, zi, w = per_location_statistics(resid, Ms, Sigma)
         return (np.max(za ** 2, 1), np.max(zi ** 2, 1), w,
                 np.argmax(za ** 2, 1), np.argmax(zi ** 2, 1))
     raise ValueError(detector)
 
 
-def initial_max(Z, W, p=1, detector="full", fit_kind="gstar"):
+def first_scan_maximum(Z, W, p=1, detector="full", fit_kind="gstar"):
     """Maximum statistic of the first scan. Under the global null the iterative
     procedure can report an outlier only if this exceeds the threshold (Prop. 2)."""
-    fit = fit_gstar_p(Z, W, p, fit_kind)
-    a, i, *_ = scan(fit.resid, fit.Ms, fit.Sigma, detector)
+    fit = fit_model(Z, W, p, fit_kind)
+    a, i, *_ = scan_statistics(fit.resid, fit.Ms, fit.Sigma, detector)
     return float(max(a.max(), i.max())), len(fit.resid)
 
 
@@ -283,7 +283,7 @@ def initial_max(Z, W, p=1, detector="full", fit_kind="gstar"):
 # iterative procedure
 # --------------------------------------------------------------------------
 @dataclass
-class Det:
+class Detection:
     t: int            # series time index of the outlier
     kind: str
     stat_ao: float
@@ -294,9 +294,9 @@ class Det:
 
 
 @dataclass
-class Result:
+class DetectionResult:
     detections: list
-    fit: FitP
+    fit: ModelFit
     c2: float
     n_sweeps: int
     history: list = field(default_factory=list)
@@ -305,19 +305,19 @@ class Result:
                                 # reference is then probably inadequate; do not trust the count)
 
 
-def _adjust(resid, Ms, d_t_res, kind, omega):
+def _subtract_outlier_pattern(resid, Ms, d_t_res, kind, omega):
     out = resid.copy()
     if kind == "IO":
         out[d_t_res] -= omega
     else:
-        Pis = _pis(Ms)
+        Pis = _residual_filter_matrices(Ms)
         for j in range(len(Pis)):
             if d_t_res + j < len(out):
                 out[d_t_res + j] -= Pis[j] @ omega
     return out
 
 
-def _clean(Z, dets, Ms):
+def _remove_outlier_effects(Z, dets, Ms):
     Zc = Z.copy()
     for d in dets:
         if d.kind == "AO":
@@ -328,7 +328,7 @@ def _clean(Z, dets, Ms):
     return Zc
 
 
-def _resid_from(Z, Ms):
+def compute_residuals(Z, Ms):
     p = Ms.shape[0]
     Y = Z[p:].copy()
     for k in range(1, p + 1):
@@ -336,32 +336,32 @@ def _resid_from(Z, Ms):
     return Y
 
 
-def iterative(Z, W, p=1, detector="full", fit_kind="gstar", alpha=0.05, c2=None,
+def iterative_detection(Z, W, p=1, detector="full", fit_kind="gstar", alpha=0.05, c2=None,
               max_outliers=30, max_sweeps=10, rel_tol=1e-3):
     """Detect-adjust-refit procedure (Chang et al. 1988; Chen and Liu 1993)."""
-    fit = fit_gstar_p(Z, W, p, fit_kind)
+    fit = fit_model(Z, W, p, fit_kind)
     T_eff = len(fit.resid)
     N = Z.shape[1]
     if c2 is None:
-        c2 = threshold(detector, N, T_eff, alpha)
+        c2 = bonferroni_threshold(detector, N, T_eff, alpha)
     dets, prev_keys, prev = [], set(), fit.Ms.ravel()
     history = []
     sweep = 0
     converged, hit_cap = False, False
     for sweep in range(1, max_sweeps + 1):
-        Zc = _clean(Z, dets, fit.Ms) if dets else Z
-        fit = fit_gstar_p(Zc, W, p, fit_kind)
-        resid = _resid_from(Z, fit.Ms)
+        Zc = _remove_outlier_effects(Z, dets, fit.Ms) if dets else Z
+        fit = fit_model(Zc, W, p, fit_kind)
+        resid = compute_residuals(Z, fit.Ms)
         Sigma = fit.Sigma.copy()
         new = []
         for _ in range(max_outliers):
-            a, i, w, la, li = scan(resid, fit.Ms, Sigma, detector, alpha)
+            a, i, w, la, li = scan_statistics(resid, fit.Ms, Sigma, detector, alpha)
             m = np.maximum(a, i)
             t = int(np.argmax(m))
             if m[t] <= c2:
                 break
             if detector == "combo":   # type from the likelihood-ratio statistics
-                lam_a, lam_i, _ = stats_quadratic(resid, fit.Ms, Sigma)
+                lam_a, lam_i, _ = full_covariance_statistics(resid, fit.Ms, Sigma)
                 is_ao = lam_a[t] > lam_i[t]
             else:
                 is_ao = a[t] > i[t]
@@ -373,7 +373,7 @@ def iterative(Z, W, p=1, detector="full", fit_kind="gstar", alpha=0.05, c2=None,
                 if kind == "AO":
                     Sinv = np.linalg.inv(Sigma)
                     J = min(p, len(resid) - 1 - t)
-                    Pis = _pis(fit.Ms)
+                    Pis = _residual_filter_matrices(fit.Ms)
                     At = sum(Pis[j].T @ Sinv @ Pis[j] for j in range(J + 1))
                     se = np.sqrt(np.diag(np.linalg.inv(At)))
                 else:
@@ -386,12 +386,12 @@ def iterative(Z, W, p=1, detector="full", fit_kind="gstar", alpha=0.05, c2=None,
             else:
                 loc = int(la[t] if kind == "AO" else li[t])
                 ts = omega / np.sqrt(np.diag(Sigma))
-            new.append(Det(t + p, kind, float(a[t]), float(i[t]), omega, ts, loc))
-            resid = _adjust(resid, fit.Ms, t, kind, omega)
+            new.append(Detection(t + p, kind, float(a[t]), float(i[t]), omega, ts, loc))
+            resid = _subtract_outlier_pattern(resid, fit.Ms, t, kind, omega)
             Sigma = np.cov(resid, rowvar=False, ddof=1)
             history.append(f"sweep {sweep}: {kind} at t={t + p}, stats AO={a[t]:.2f} IO={i[t]:.2f}")
         if len(new) >= max_outliers:          # cap reached: is there still an exceedance?
-            a_, i_, *_ = scan(resid, fit.Ms, Sigma, detector, alpha)
+            a_, i_, *_ = scan_statistics(resid, fit.Ms, Sigma, detector, alpha)
             hit_cap = hit_cap or float(np.max(np.maximum(a_, i_))) > c2
         keys = {(d.t, d.kind) for d in new}
         cur = fit.Ms.ravel()
@@ -401,6 +401,6 @@ def iterative(Z, W, p=1, detector="full", fit_kind="gstar", alpha=0.05, c2=None,
             converged = True
             break
         prev_keys, prev = keys, cur
-    Zc = _clean(Z, dets, fit.Ms) if dets else Z
-    fit = fit_gstar_p(Zc, W, p, fit_kind)
-    return Result(dets, fit, c2, sweep, history, converged, hit_cap)
+    Zc = _remove_outlier_effects(Z, dets, fit.Ms) if dets else Z
+    fit = fit_model(Zc, W, p, fit_kind)
+    return DetectionResult(dets, fit, c2, sweep, history, converged, hit_cap)

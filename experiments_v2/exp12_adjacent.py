@@ -27,7 +27,7 @@ DETS = [("full", "gstar"), ("perloc", "gstar")]
 
 # (name, list of (time offset, location: 'j' or 'nb', kind, magnitude))
 SCEN = [
-    ("AO,AO same location, gap 3 (original design)", [(0, "j", "AO", DELTA), (3, "j", "AO", DELTA)]),
+    ("AO,AO same location, gap 3", [(0, "j", "AO", DELTA), (3, "j", "AO", DELTA)]),
     ("AO,AO same location, gap 2", [(0, "j", "AO", DELTA), (2, "j", "AO", DELTA)]),
     ("AO,AO same location, consecutive", [(0, "j", "AO", DELTA), (1, "j", "AO", DELTA)]),
     ("AO patch, 3 consecutive, same location", [(0, "j", "AO", DELTA), (1, "j", "AO", DELTA), (2, "j", "AO", DELTA)]),
@@ -38,27 +38,27 @@ SCEN = [
 ]
 
 
-def one(scen):
+def run_replication(scen):
     name, spec = scen
-    C, W, Sigma, Ms = D.design(N, LEVEL)
+    C, W, Sigma, Ms = D.make_design(N, LEVEL)
     sd = np.sqrt(np.diag(Sigma))
     rng = np.random.default_rng(zlib.crc32(name.encode()))
     acc = {d: dict(tp=0, ndet=0, type_ok=0, ntrue=0) for d in DETS}
     for _ in range(R):
-        Z = G.simulate_gstar_p(Ms, Sigma, T, rng=rng)
+        Z = G.simulate_model(Ms, Sigma, T, rng=rng)
         t0 = int(rng.integers(20, T - 45))
         j = int(rng.integers(N))
-        nb = D.neighbours(C, j, 1)[0]
+        nb = D.nearest_neighbours(C, j, 1)[0]
         truth = {}
         Psi = Z
         for off, where, kind, mag in spec:
             loc = j if where == "j" else nb
             om = np.zeros(N)
             om[loc] = mag * sd[loc]
-            Psi = G.inject(Psi, Ms, t0 + off, om, kind)
+            Psi = G.add_outlier(Psi, Ms, t0 + off, om, kind)
             truth[t0 + off] = kind
         for d in DETS:
-            res = G.iterative(Psi, W, 1, d[0], d[1])
+            res = G.iterative_detection(Psi, W, 1, d[0], d[1])
             a = acc[d]
             a["ntrue"] += len(truth)
             a["ndet"] += len(res.detections)
@@ -78,7 +78,7 @@ if __name__ == "__main__":
     t0 = time.time()
     out = []
     with Pool(2) as pool:
-        for rows in pool.imap(one, SCEN):
+        for rows in pool.imap(run_replication, SCEN):
             out += rows
             print(rows[0]["scenario"], f"{time.time()-t0:.0f}s", flush=True)
     with open(RESULTS / "exp12_adjacent.csv", "w", newline="") as f:

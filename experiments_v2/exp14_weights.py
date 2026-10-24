@@ -23,7 +23,7 @@ N, T, R, R0, DELTA = 8, 250, 500, 1000, 4.0
 FITS = ["inverse-distance (true)", "2-nearest-neighbour", "uniform", "no spatial lag"]
 
 
-def W_for(C, name):
+def weight_matrix_for(C, name):
     if name.startswith("inverse"):
         return D.W_inverse_distance(C), "gstar"
     if name.startswith("2-nearest"):
@@ -33,27 +33,27 @@ def W_for(C, name):
     return D.W_inverse_distance(C), "ar"
 
 
-def one(cfg):
+def run_replication(cfg):
     level, fitname = cfg
-    C, Wtrue, Sigma, Ms = D.design(N, level)
-    Wf, kind_fit = W_for(C, fitname)
+    C, Wtrue, Sigma, Ms = D.make_design(N, level)
+    Wf, kind_fit = weight_matrix_for(C, fitname)
     sd = np.sqrt(np.diag(Sigma))
     rng = np.random.default_rng(zlib.crc32(repr(cfg).encode()))
-    c2 = G.threshold("full", N, T - 1)
+    c2 = G.bonferroni_threshold("full", N, T - 1)
     fw = 0
     for _ in range(R0):
-        Z = G.simulate_gstar_p(Ms, Sigma, T, rng=rng)
-        fw += G.initial_max(Z, Wf, 1, "full", kind_fit)[0] > c2
+        Z = G.simulate_model(Ms, Sigma, T, rng=rng)
+        fw += G.first_scan_maximum(Z, Wf, 1, "full", kind_fit)[0] > c2
     out = dict(corr=level, fitted_W=fitname, fwer=fw / R0)
     for kind in ("AO", "IO"):
         hit = 0
         for _ in range(R):
-            Z = G.simulate_gstar_p(Ms, Sigma, T, rng=rng)
+            Z = G.simulate_model(Ms, Sigma, T, rng=rng)
             t0 = int(rng.integers(20, T - 20))
             j = int(rng.integers(N))
             om = np.zeros(N)
             om[j] = DELTA * sd[j]
-            res = G.iterative(G.inject(Z, Ms, t0, om, kind), Wf, 1, "full", kind_fit)
+            res = G.iterative_detection(G.add_outlier(Z, Ms, t0, om, kind), Wf, 1, "full", kind_fit)
             hit += any(abs(d.t - t0) <= 1 for d in res.detections)
         out[f"power_{kind}"] = hit / R
     return out
@@ -62,7 +62,7 @@ def one(cfg):
 if __name__ == "__main__":
     t0 = time.time()
     with Pool(2) as pool:
-        out = pool.map(one, list(itertools.product(["moderate", "high"], FITS)))
+        out = pool.map(run_replication, list(itertools.product(["moderate", "high"], FITS)))
     with open(RESULTS / "exp14_weights.csv", "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=list(out[0]))
         w.writeheader()

@@ -37,35 +37,35 @@ LEVELS = ["low", "moderate", "high"]
 
 
 def null_quantiles(level):
-    C, W, Sigma, Ms = D.design(N, level)
+    C, W, Sigma, Ms = D.make_design(N, level)
     rng = np.random.default_rng(zlib.crc32(f"null-{level}".encode()))
     mx = {d: [] for d in DETS}
     for _ in range(R0):
-        Z = G.simulate_gstar_p(Ms, Sigma, T, rng=rng)
+        Z = G.simulate_model(Ms, Sigma, T, rng=rng)
         for det, fk in DETS:
-            mx[(det, fk)].append(G.initial_max(Z, W, 1, det, fk)[0])
+            mx[(det, fk)].append(G.first_scan_maximum(Z, W, 1, det, fk)[0])
     return level, {d: float(np.quantile(v, 0.95)) for d, v in mx.items()}, \
-        {d: float(np.mean(np.array(v) > G.threshold(d[0], N, T - 1))) for d, v in mx.items()}
+        {d: float(np.mean(np.array(v) > G.bonferroni_threshold(d[0], N, T - 1))) for d, v in mx.items()}
 
 
-def one_config(args):
+def run_configuration(args):
     (level, pattern, kind, delta), cadj = args
-    C, W, Sigma, Ms = D.design(N, level)
+    C, W, Sigma, Ms = D.make_design(N, level)
     rng = np.random.default_rng(zlib.crc32(repr((level, pattern, kind, delta)).encode()))
     sd = np.sqrt(np.diag(Sigma))
     acc = {(d, mode): dict(hit=0, type_ok=0, loc_ok=0, false=0) for d in DETS for mode in ("nominal", "adjusted")}
     for _ in range(R):
-        Z = G.simulate_gstar_p(Ms, Sigma, T, rng=rng)
+        Z = G.simulate_model(Ms, Sigma, T, rng=rng)
         t0 = int(rng.integers(20, T - 20))
         j = int(rng.integers(N))
-        idx = {"single": [j], "cluster": [j] + D.neighbours(C, j, 2), "global": list(range(N))}[pattern]
+        idx = {"single": [j], "cluster": [j] + D.nearest_neighbours(C, j, 2), "global": list(range(N))}[pattern]
         omega = np.zeros(N)
         omega[idx] = delta * sd[idx]
-        Psi = G.inject(Z, Ms, t0, omega, kind)
+        Psi = G.add_outlier(Z, Ms, t0, omega, kind)
         for det, fk in DETS:
             for mode in ("nominal", "adjusted"):
                 c2 = None if mode == "nominal" else cadj[(det, fk)]
-                res = G.iterative(Psi, W, 1, det, fk, c2=c2)
+                res = G.iterative_detection(Psi, W, 1, det, fk, c2=c2)
                 a = acc[((det, fk), mode)]
                 near = [d for d in res.detections if abs(d.t - t0) <= 1]
                 a["false"] += len(res.detections) - len(near)
@@ -94,12 +94,12 @@ if __name__ == "__main__":
         w.writerow(["corr", "detector", "fit", "c2_nominal", "fwer_nominal", "c2_size_adjusted"])
         for lv, q, fw in nq:
             for d in DETS:
-                w.writerow([lv, d[0], d[1], round(G.threshold(d[0], N, T - 1), 3), fw[d], round(q[d], 3)])
+                w.writerow([lv, d[0], d[1], round(G.bonferroni_threshold(d[0], N, T - 1), 3), fw[d], round(q[d], 3)])
     print(f"null quantiles done {time.time()-t0:.0f}s", flush=True)
     grid = list(itertools.product(LEVELS, ["single", "cluster", "global"], ["AO", "IO"], [3, 4, 5]))
     out = []
     with Pool(2) as pool:
-        for k, rows in enumerate(pool.imap_unordered(one_config, [(g, cadj[g[0]]) for g in grid])):
+        for k, rows in enumerate(pool.imap_unordered(run_configuration, [(g, cadj[g[0]]) for g in grid])):
             out += rows
             print(f"{k+1}/{len(grid)} {time.time()-t0:.0f}s", flush=True)
     out.sort(key=lambda r: (r["corr"], r["pattern"], r["kind"], r["delta"], r["detector"], r["fit"], r["threshold"]))

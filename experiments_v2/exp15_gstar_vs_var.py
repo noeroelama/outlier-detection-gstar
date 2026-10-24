@@ -28,47 +28,47 @@ R0, R, DELTA, LEVEL = 500, 300, 4.0, "moderate"
 FITS = ["gstar", "var"]
 
 
-def feasible(N, T, f):
+def var_is_feasible(N, T, f):
     """Residual covariance must be nonsingular: T-1-(regressors per equation) > N."""
     k = 2 if f == "gstar" else N
     return (T - 1 - k) > N
 
 
-def one(cfg):
+def run_replication(cfg):
     N, T = cfg
-    C, W, Sigma, Ms = D.design(N, LEVEL)
+    C, W, Sigma, Ms = D.make_design(N, LEVEL)
     rng = np.random.default_rng(zlib.crc32(repr(cfg).encode()))
     sd = np.sqrt(np.diag(Sigma))
     mx = {f: [] for f in FITS}
     err = {f: [] for f in FITS}
     for _ in range(R0):
-        Z = G.simulate_gstar_p(Ms, Sigma, T, rng=rng)
+        Z = G.simulate_model(Ms, Sigma, T, rng=rng)
         for f in FITS:
-            if not feasible(N, T, f):
+            if not var_is_feasible(N, T, f):
                 continue
-            fit = G.fit_gstar_p(Z, W, 1, f)
+            fit = G.fit_model(Z, W, 1, f)
             err[f].append(np.linalg.norm(fit.Ms[0] - Ms[0]) / N)
-            a, i, *_ = G.scan(fit.resid, fit.Ms, fit.Sigma, "full")
+            a, i, *_ = G.scan_statistics(fit.resid, fit.Ms, fit.Sigma, "full")
             mx[f].append(max(a.max(), i.max()))
-    c_nom = G.threshold("full", N, T - 1)
+    c_nom = G.bonferroni_threshold("full", N, T - 1)
     cadj = {f: float(np.quantile(mx[f], 0.95)) if mx[f] else np.nan for f in FITS}
     out = []
     power = {(f, k): 0 for f in FITS for k in ("AO", "IO")}
     for kind in ("AO", "IO"):
         for _ in range(R):
-            Z = G.simulate_gstar_p(Ms, Sigma, T, rng=rng)
+            Z = G.simulate_model(Ms, Sigma, T, rng=rng)
             t0 = int(rng.integers(10, T - 10))
             j = int(rng.integers(N))
             om = np.zeros(N)
             om[j] = DELTA * sd[j]
-            Psi = G.inject(Z, Ms, t0, om, kind)
+            Psi = G.add_outlier(Z, Ms, t0, om, kind)
             for f in FITS:
-                if not feasible(N, T, f):
+                if not var_is_feasible(N, T, f):
                     continue
-                res = G.iterative(Psi, W, 1, "full", f, c2=cadj[f])
+                res = G.iterative_detection(Psi, W, 1, "full", f, c2=cadj[f])
                 power[(f, kind)] += any(abs(d.t - t0) <= 1 for d in res.detections)
     for f in FITS:
-        if not feasible(N, T, f):
+        if not var_is_feasible(N, T, f):
             out.append(dict(N=N, T=T, fit=f, n_coef=(2 * N if f == "gstar" else N * N), M_error=np.nan,
                             fwer_nominal=np.nan, c2_nominal=c_nom, c2_size_adjusted=np.nan,
                             power_AO=np.nan, power_IO=np.nan))
@@ -85,7 +85,7 @@ if __name__ == "__main__":
     grid = list(itertools.product([8, 16, 32], [60, 120, 250]))
     rows = []
     with Pool(2) as pool:
-        for r in pool.imap_unordered(one, grid):
+        for r in pool.imap_unordered(run_replication, grid):
             rows += r
             print(r[0]["N"], r[0]["T"], f"{time.time()-t0:.0f}s", flush=True)
     rows.sort(key=lambda r: (r["N"], r["T"], r["fit"]))

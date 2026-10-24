@@ -44,13 +44,13 @@ IDN = {'Aceh': 'ID-AC', 'Sumatera Utara': 'ID-SU', 'Sumatera Barat': 'ID-SB', 'R
        'Papua Barat Daya': 'ID-PD'}
 
 
-def to_region(v, eng):
+def region_code(v, eng):
     if isinstance(v, str) and v.startswith("ID-"):
         return v
     return IDN.get(v, eng.get(v))
 
 
-def corr_rows(X, Y):
+def rowwise_correlation(X, Y):
     Xc = X - X.mean(1, keepdims=True)
     Yc = Y - Y.mean(1, keepdims=True)
     return (Xc * Yc).sum(1) / np.sqrt((Xc ** 2).sum(1) * (Yc ** 2).sum(1))
@@ -75,7 +75,7 @@ def main():
     d = pd.read_csv(a.file)
     if a.filter_col:
         d = d[d[a.filter_col].astype(str) == a.filter_val]
-    d["rid"] = [to_region(v, eng) for v in d[a.prov_col]]
+    d["rid"] = [region_code(v, eng) for v in d[a.prov_col]]
     miss = sorted(set(d.loc[d.rid.isna(), a.prov_col]))
     if miss:
         raise SystemExit(f"unmatched province names: {miss}")
@@ -91,16 +91,16 @@ def main():
         raise SystemExit("second dataset has missing values in the common period")
     A1, A2 = anomalies(Yc), anomalies(Y2c)
     W = W_rain(cen)
-    f1, f2 = G.fit_gstar_p(A1, W, 1), G.fit_gstar_p(A2, W, 1)
-    r_anom = corr_rows(A1, A2)
-    r_res = corr_rows(f1.resid, f2.resid)
-    lam_ao, lam_io, _ = G.stats_quadratic(f2.resid, f2.Ms, f2.Sigma)
+    f1, f2 = G.fit_model(A1, W, 1), G.fit_model(A2, W, 1)
+    r_anom = rowwise_correlation(A1, A2)
+    r_res = rowwise_correlation(f1.resid, f2.resid)
+    lam_ao, lam_io, _ = G.full_covariance_statistics(f2.resid, f2.Ms, f2.Sigma)
     lam = np.maximum(lam_ao, lam_io)
     T2 = len(lam)
-    c2 = G.threshold("full", len(W), T2)
-    res = G.iterative(A2, W, 1, "full", "gstar", max_outliers=60, max_sweeps=15)
+    c2 = G.bonferroni_threshold("full", len(W), T2)
+    res = G.iterative_detection(A2, W, 1, "full", "gstar", max_outliers=60, max_sweeps=15)
     det2 = sorted(common[dd.t] for dd in res.detections)
-    res1 = G.iterative(A1, W, 1, "full", "gstar", max_outliers=60, max_sweeps=15)
+    res1 = G.iterative_detection(A1, W, 1, "full", "gstar", max_outliers=60, max_sweeps=15)
     det1 = sorted(common[dd.t] for dd in res1.detections)   # CHIRPS refitted on the common period
 
     rows = []

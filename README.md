@@ -79,12 +79,29 @@ in Indonesia") uses the new module `src/gstar_outlier/general.py`:
   per-location maximum statistic;
 - the combined test (`detector="combo"`): full-covariance OR per-location
   maximum statistic, each at level alpha/2 (recommended for routine use);
-- the iterative procedure `general.iterative`, which also returns
+- the iterative procedure `general.iterative_detection`, which also returns
   `converged` and `hit_cap`. `hit_cap = True` means a sweep stopped at
   `max_outliers`; the count of outliers is then set by the cap, not by the data,
   and the Gaussian reference is probably inadequate (this happened with the
   weekly rubella counts used in version 1, which is why that application was
   dropped).
+
+Main functions in `gstar_outlier.general`:
+
+| Function | Purpose |
+|---|---|
+| `fit_model(Z, W, p, kind)` | least-squares fit of GSTAR(p;1) (`kind="gstar"`), unrestricted VAR(p) (`"var"`) or N separate AR(p) models (`"ar"`) |
+| `simulate_model(Ms, Sigma, T)` | simulate a GSTAR/VAR series with Gaussian or Student-t errors |
+| `add_outlier(Z, Ms, t0, omega, kind)` | add an additive (AO) or innovative (IO) outlier to a series |
+| `compute_residuals(Z, Ms)` | residuals of a series for given coefficient matrices |
+| `full_covariance_statistics(resid, Ms, Sigma)` | AO/IO likelihood-ratio statistics using the full error covariance |
+| `per_location_statistics(resid, Ms, Sigma)` | calibrated per-location z-statistics |
+| `bonferroni_threshold(detector, N, T_eff)` | Bonferroni critical value for each detector |
+| `scan_statistics(resid, Ms, Sigma, detector)` | statistics at every time point (one scan) |
+| `first_scan_maximum(Z, W, p, detector, fit_kind)` | largest first-scan statistic (used for FWER and size-adjusted thresholds) |
+| `iterative_detection(Z, W, p, detector, fit_kind)` | iterative detect-adjust-refit procedure |
+| `companion_spectral_radius(Ms)` | stationarity check |
+| `psi_weights(Ms, H)` | moving-average (psi) weights of the fitted model |
 
 Scripts (run from `experiments_v2/`, fixed seeds, results in `results_v2/`):
 

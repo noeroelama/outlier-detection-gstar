@@ -25,20 +25,20 @@ N, T, R, LEVEL = 8, 250, 500, "moderate"
 DELTAS = [3, 4, 5, 6, 8, 10, 12]
 
 
-def one(cfg):
+def run_replication(cfg):
     pattern, kind, delta = cfg
-    C, W, Sigma, Ms = D.design(N, LEVEL)
+    C, W, Sigma, Ms = D.make_design(N, LEVEL)
     sd = np.sqrt(np.diag(Sigma))
     rng = np.random.default_rng(zlib.crc32(repr(cfg).encode()))
     hit = wrong = 0
     for _ in range(R):
-        Z = G.simulate_gstar_p(Ms, Sigma, T, rng=rng)
+        Z = G.simulate_model(Ms, Sigma, T, rng=rng)
         t0 = int(rng.integers(20, T - 20))
         j = int(rng.integers(N))
-        idx = [j] if pattern == "single" else [j] + D.neighbours(C, j, 2)
+        idx = [j] if pattern == "single" else [j] + D.nearest_neighbours(C, j, 2)
         om = np.zeros(N)
         om[idx] = delta * sd[idx]
-        res = G.iterative(G.inject(Z, Ms, t0, om, kind), W, 1)
+        res = G.iterative_detection(G.add_outlier(Z, Ms, t0, om, kind), W, 1)
         near = [d for d in res.detections if abs(d.t - t0) <= 1]
         if near:
             hit += 1
@@ -52,7 +52,7 @@ if __name__ == "__main__":
     grid = list(itertools.product(["single", "cluster"], ["AO", "IO"], DELTAS))
     t0 = time.time()
     with Pool(2) as pool:
-        out = pool.map(one, grid)
+        out = pool.map(run_replication, grid)
     with open(RESULTS / "exp13_classification.csv", "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=list(out[0]))
         w.writeheader()
