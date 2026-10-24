@@ -18,7 +18,7 @@ and whether the iterative procedure applied to the second panel flags it.
 Reference values: the same correlations over all months.
 
 Usage:
-  python exp21_second_dataset.py --file ../../../../Data/era5_tp_province_monthly.csv \
+  python exp21_second_dataset.py --file "D:/MyDrive/Kuliah/Ehime/Doctoral/Data/era5_tp_province_monthly.csv" \
       --prov-col name --value-col value --label ERA5 [--filter-col variable --filter-val tp]
 """
 import argparse
