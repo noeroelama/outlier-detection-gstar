@@ -1,13 +1,13 @@
 cff-version: 1.2.0
 message: "If you use this software or data, please cite the paper below."
-title: "Covariance-aware outlier detection in GSTAR models: reference implementation and data"
+title: "Iterative outlier detection in GSTAR models using the full error covariance: reference implementation and data"
 type: software
 authors:
   - family-names: Nurwahid
     given-names: Arif
     affiliation: "Ehime University"
     email: arif@lms.id
-version: 1.0.0
+version: 2.0.0
 doi: 10.5281/zenodo.21185669
 license: MIT
 repository-code: "https://github.com/noeroelama/outlier-detection-gstar"
@@ -17,11 +17,11 @@ keywords:
   - additive outlier
   - innovative outlier
   - likelihood ratio test
-  - rubella surveillance
-  - Japan
+  - rainfall
+  - Indonesia
 preferred-citation:
   type: article
-  title: "Covariance-aware outlier detection in GSTAR models, with an application to rubella surveillance in Japan"
+  title: "Iterative outlier detection in generalized space-time autoregressive models using the full error covariance, with an application to monthly rainfall in Indonesia"
   authors:
     - family-names: Nurwahid
       given-names: Arif
